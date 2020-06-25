@@ -16,6 +16,6 @@ setup(
     url = 'https://github.com/tomma90/tessimdc',
     packages = find_packages(),
     include_package_data=True,
-    long_description = read('README.rst'),
+    long_description = read('README.md'),
     test_suite = 'tessimdc.test'
 )
