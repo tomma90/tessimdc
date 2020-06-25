@@ -13,7 +13,7 @@ setup(
     description = 'Simulation tool for DC biased TES detectors',
     license = 'GPLv3',
     keywords = 'TES detectors CMB cosmology',
-    url = 'https://github.com/tomma90/TES_sim_DC',
+    url = 'https://github.com/tomma90/tessimdc',
     packages = find_packages(),
     include_package_data=True,
     long_description = read('README.rst'),
