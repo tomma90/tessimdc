@@ -4,7 +4,7 @@ import numpy as np
 
 PI = np.pi
 
-class DcBiasedTesParameters:
+class TesDcModel:
 
 	def __init__(self):
 		self.squid_input_inductor = 65.e-6 # SQUID input inductor [henry]
@@ -61,9 +61,7 @@ class DcBiasedTesParameters:
 		self.bias_current = bias_current
 
 
-class ResistanceTemperature(DcBiasedTesParameters):
-	
-	def RT(self, temperature):
+	def resistance_vs_temperature(self, temperature):
 
 		alpha = self.tes_log_sensitivity_alpha
 		Tc = self.tes_transition_temperature
@@ -74,13 +72,11 @@ class ResistanceTemperature(DcBiasedTesParameters):
 		return Rn * (np.arctan((temperature - Tc) * steepness_rt) + PI / 2.) / PI
 
 
-class CurrentTemperatureDiffEquations(ResistanceTemperature):
-
-	def bolo(self, current_temperature, bias_current, loading_power, bath_temperature):
+	def differential_equations(self, current_temperature, bias_current, loading_power, bath_temperature):
 
 		I = current_temperature[0]
 		T = current_temperature[1]
-		R = self.RT(T)
+		R = self.resistance_vs_temperature(T)
 		Rs = self.shunt_resistor
 		G = self.tes_leg_thermal_conductivity
 		n = self.tes_leg_thermal_carrier_exponent
@@ -95,7 +91,7 @@ class CurrentTemperatureDiffEquations(ResistanceTemperature):
 		
 
 #solve & update TES I & T with Runge-Kutta method
-def TesRungeKuttaSolver(time_array, bias_current_array, loading_power_array, bath_temperature_array, class_type = CurrentTemperatureDiffEquations):
+def TesRungeKuttaSolver(time_array, bias_current_array, loading_power_array, bath_temperature_array, tesdcmodel = TesDcModel()):
 
 	if len(time_array) != len(bias_current_array):
 		print('Error!!! Input arrays need to have same size!')
@@ -114,30 +110,28 @@ def TesRungeKuttaSolver(time_array, bias_current_array, loading_power_array, bat
 	I = np.zeros(step)
 	T = np.zeros(step)
 
-	detector_output = class_type()
-
 	# Initial conditions
-	T0 = detector_output.tes_transition_temperature
-	I0 = detector_output.bias_current * detector_output.shunt_resistor / (detector_output.RT(T0) + detector_output.shunt_resistor)
+	T0 = tesdcmodel.tes_transition_temperature
+	I0 = tesdcmodel.bias_current * tesdcmodel.shunt_resistor / (tesdcmodel.resistance_vs_temperature(T0) + tesdcmodel.shunt_resistor)
 	IT0 = [I0, T0]
 
 	for i in range(int(step)):
-		kI1_tmp, kT1_tmp = detector_output.bolo(IT0, bias_current_array[i], loading_power_array[i], bath_temperature_array[i])
+                kI1_tmp, kT1_tmp = tesdcmodel.differential_equations(IT0, bias_current_array[i], loading_power_array[i], bath_temperature_array[i])
 		kI1 = h*kI1_tmp
 		kT1 = h*kT1_tmp
 	
 		IT0_tmp = [IT0[0]+0.5*kI1, IT0[1]+0.5*kT1]
-		kI2_tmp, kT2_tmp = detector_output.bolo(IT0_tmp, bias_current_array[i], loading_power_array[i], bath_temperature_array[i])
+		kI2_tmp, kT2_tmp = tesdcmodel.differential_equations(IT0_tmp, bias_current_array[i], loading_power_array[i], bath_temperature_array[i])
 		kI2 = h*kI2_tmp
 		kT2 = h*kT2_tmp
 		
 		IT0_tmp = [IT0[0]+0.5*kI2, IT0[1]+0.5*kT2]
-		kI3_tmp, kT3_tmp = detector_output.bolo(IT0_tmp, bias_current_array[i], loading_power_array[i], bath_temperature_array[i])
+		kI3_tmp, kT3_tmp = tesdcmodel.differential_equations(IT0_tmp, bias_current_array[i], loading_power_array[i], bath_temperature_array[i])
 		kI3 = h*kI3_tmp
 		kT3 = h*kT3_tmp
 	
 		IT0_tmp = [IT0[0]+kI3, IT0[1]+kT3]
-		kI4_tmp, kT4_tmp = detector_output.bolo(IT0_tmp, bias_current_array[i], loading_power_array[i], bath_temperature_array[i])
+		kI4_tmp, kT4_tmp = tesdcmodel.differential_equations(IT0_tmp, bias_current_array[i], loading_power_array[i], bath_temperature_array[i])
 		kI4 = h*kI4_tmp
 		kT4 = h*kT4_tmp
 

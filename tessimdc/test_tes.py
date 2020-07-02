@@ -4,11 +4,11 @@ import tessimdc as tes
 
 # Initiate TES - This create an instance of a DC-biased TES with 
 # some default values to bias the TES at 0.5xRn
-tes_1 = tes.DcBiasedTesParameters()
+tes_1 = tes.TesDcModel()
 # You can see the default values by typing (example):
 # tes_1.bias_current
 # Default values can be modified. Example to modify bias current:
-# tes_1.modify_bias_current = 35.e-6
+# tes_1.modify_bias_current(100.e-6)
 
 # Define time length [s] and sampling rate [Hz]
 time = 10.
@@ -28,7 +28,7 @@ Tb = np.ones_like(t)*tes_1.temperature_focal_plane
 # Tb = np.ones_like(t)*tes_1.temperature_focal_plane
 
 # Solve
-I, T = tes.TesRungeKuttaSolver(t, Ib, P, Tb)
+I, T = tes.TesRungeKuttaSolver(t, Ib, P, Tb, tes_1)
 
 # Plot
 plt.figure()
