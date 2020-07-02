@@ -21,6 +21,29 @@ class TesDcModel:
 		self.tes_heat_capacity = 33.e-3*2.5*0.5e-12/((1.71*0.1)**4.-0.1**4.)*4.*(1.71*0.1)**(4.-1.) # tes heat capacity [joule/kelvin]
 		self.bias_current = 33.e-6 # bias current [ampere]	
 	
+	def print_info(self):
+		print('\n')
+		print('TES Model from Irwin and Hilton, 2005.')
+		print('Default values for the DC biased TES:')
+		print('\n')
+		print('Normal resistance:%e ohm'%self.tes_normal_resistance)
+		print('Shunt resistor:%e ohm'%self.shunt_resistor)
+		print('SQUID input inductor:%e H'%self.squid_input_inductor)
+		print('TES Log Sensitivity at 0.5 ohm (for arctan approx):%e'%self.tes_log_sensitivity_alpha)
+		print('Focal plane temperature:%e K'%self.temperature_focal_plane)
+		print('TES critical temperature:%e K (1.71 x bath temperature)'%self.tes_transition_temperature)
+		print('TES leg thermal carrier:%e (n=b+1, b = 3 for phonons or 1 for electrons)'%self.tes_leg_thermal_carrier_exponent)
+		print('TES normal time-constant:%e s'%self.tes_normal_time_constant)
+		print('Total optical loading power expected:%e W'%self.optical_loading_power)
+		print('Saturation power expected:%e W (Psat = 2.5 x optical expected)'%self.tes_saturation_power)
+		print('TES leg thermal conductivity:%e W/K (P_sat*n*Tc^(n-1)/(Tc^n-Tb^n))'%self.tes_leg_thermal_conductivity)
+		print('TES heat capacity:%e J/K (tau*G)'%self.tes_heat_capacity)
+		print('Bias current:%e A'%self.bias_current)
+		print('\n')
+		print('To change one or more parameter use the modify methods.')
+		print('Example: to modify bias_current use modify_bias_current. Same sintax for other parameters.')
+		print('\n')
+
 	def modify_squid_input_inductor(self, squid_input_inductor):
 		self.squid_input_inductor = squid_input_inductor  
 
@@ -88,7 +111,34 @@ class TesDcModel:
 		Pr = V * V / R
 
 		return [(V - I * Rs - I * R) / L, (-Pb + Pr + loading_power) / C]
-		
+
+
+        def dR_dT(self, temperature):
+                
+                h_t = 1.e-6
+                
+                return (self.resistance_vs_temperature(temperature + h_t) - self.resistance_vs_temperature(temperature - h_t)) / 2. / h_t 
+
+
+        def alpha_calculation(self, temperature):
+                
+                return temperature * self.dR_dT(temperature) / self.resistance_vs_temperature(temperature)
+
+
+        def loop_gain_calculation(self, temperature, current):
+
+                return self.alpha_calculation(temperature) * current * current * self.resistance_vs_temperature(temperature) / self.tes_leg_thermal_conductivity / temperature
+
+        
+        def time_constant_calculation(self, temperature, current):
+
+                return self.tes_normal_time_constant / (self.loop_gain_calculation(temperature, current) + 1.)
+
+
+        def current_responsivity_calculation(self, temperature, current):
+
+                return - 1. / current / self.resistance_vs_temperature(temperature) * self.loop_gain_calculation(temperature, current) / (self.loop_gain_calculation(temperature, current) + 1.)
+
 
 #solve & update TES I & T with Runge-Kutta method
 def TesRungeKuttaSolver(time_array, bias_current_array, loading_power_array, bath_temperature_array, tesdcmodel = TesDcModel()):
@@ -116,7 +166,7 @@ def TesRungeKuttaSolver(time_array, bias_current_array, loading_power_array, bat
 	IT0 = [I0, T0]
 
 	for i in range(int(step)):
-                kI1_tmp, kT1_tmp = tesdcmodel.differential_equations(IT0, bias_current_array[i], loading_power_array[i], bath_temperature_array[i])
+		kI1_tmp, kT1_tmp = tesdcmodel.differential_equations(IT0, bias_current_array[i], loading_power_array[i], bath_temperature_array[i])
 		kI1 = h*kI1_tmp
 		kT1 = h*kT1_tmp
 	
