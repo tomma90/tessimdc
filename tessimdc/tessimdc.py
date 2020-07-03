@@ -113,31 +113,31 @@ class TesDcModel:
 		return [(V - I * Rs - I * R) / L, (-Pb + Pr + loading_power) / C]
 
 
-        def dR_dT(self, temperature):
-                
-                h_t = 1.e-6
-                
-                return (self.resistance_vs_temperature(temperature + h_t) - self.resistance_vs_temperature(temperature - h_t)) / 2. / h_t 
+	def dR_dT(self, temperature):
+		
+		h_t = 1.e-6
+		
+		return (self.resistance_vs_temperature(temperature + h_t) - self.resistance_vs_temperature(temperature - h_t)) / 2. / h_t 
 
 
-        def alpha_calculation(self, temperature):
-                
-                return temperature * self.dR_dT(temperature) / self.resistance_vs_temperature(temperature)
+	def alpha_calculation(self, temperature):
+		
+		return temperature * self.dR_dT(temperature) / self.resistance_vs_temperature(temperature)
 
 
-        def loop_gain_calculation(self, temperature, current):
+	def loop_gain_calculation(self, temperature, current):
+		
+		return self.alpha_calculation(temperature) * current * current * self.resistance_vs_temperature(temperature) / self.tes_leg_thermal_conductivity / temperature
 
-                return self.alpha_calculation(temperature) * current * current * self.resistance_vs_temperature(temperature) / self.tes_leg_thermal_conductivity / temperature
-
-        
-        def time_constant_calculation(self, temperature, current):
-
-                return self.tes_normal_time_constant / (self.loop_gain_calculation(temperature, current) + 1.)
+	
+	def time_constant_calculation(self, temperature, current):
+		
+		return self.tes_normal_time_constant / (self.loop_gain_calculation(temperature, current) + 1.)
 
 
-        def current_responsivity_calculation(self, temperature, current):
-
-                return - 1. / current / self.resistance_vs_temperature(temperature) * self.loop_gain_calculation(temperature, current) / (self.loop_gain_calculation(temperature, current) + 1.)
+	def current_responsivity_calculation(self, temperature, current):
+		
+		return - 1. / current / self.resistance_vs_temperature(temperature) * self.loop_gain_calculation(temperature, current) / (self.loop_gain_calculation(temperature, current) + 1.)
 
 
 #solve & update TES I & T with Runge-Kutta method
