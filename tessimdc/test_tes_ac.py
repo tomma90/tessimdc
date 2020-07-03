@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tessimdc as tes
 
-# Initiate TES - This create an instance of a DC-biased TES with 
+# Initiate TES - This create an instance of a AC-biased TES with 
 # some default values to bias the TES at 0.5xRn
 tes_ac = tes.TesAcModel()
 # You can see the default values using the print_info() method:
