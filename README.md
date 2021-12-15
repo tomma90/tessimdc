@@ -6,3 +6,5 @@ We also provide an AC bias version based on the DfMux readout scheme:
 [Dobbs et al. 2012](https://doi.org/10.1063/1.4737629).
 
 The code is still being developed. In order to use it import the module tessimdc.py and give a look to test_tes_dc.py or test_tes_ac.py for some example on how to use the code.
+
+There is a new implementation of the code. It uses numba to speed up the computation. It can be found at: https://github.com/tomma90/tes_simulator
